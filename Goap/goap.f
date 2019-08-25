@@ -8,6 +8,10 @@ c	              (3) loop over each structure
 c	       inside the loop: (a) read in structure
 c	                        (b) calculate local system vectors for each atom
 c	                        (c) loop over all pairs and evaluate
+c
+c This code is modified from the original GOAP code from the Skolnick lab (http://pwp.gatech.edu/cssb/jeffrey-skolnick/), so that an energy value is assigned to each atom. For the original goap code, obtain it from http://pwp.gatech.edu/cssb/goap/.
+c The reference of the GOAP is:
+c H. Zhou and J. Skolnick: GOAP: A generalized orientation-dependent, all-atom statistical potential for protein structure prediction, Biophysical Journal, 101(8):2043-2052, 2011
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
       implicit real*8(a-h,o-z)
       integer maxa,nwt,newwt,maxp,natom,numdel,
