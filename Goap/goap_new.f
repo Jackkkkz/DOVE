@@ -14,8 +14,8 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
      &        ntyp,maxit,maxres,lengthtemp
       logical iwrit,ioutwt,slmut,slmut1
       real*8 cbox,cx,cy,cz,vdwradi(5),pi,pi3,theta,rcut,sgcut,rd
-      parameter(maxa=20000,cbox=18.856,maxit=100,
-     &          ntyp=20,natyp=8,maxres=1000,ibin=20)
+      parameter(maxa=200000,cbox=18.856,maxit=10000,
+     &          ntyp=20,natyp=8,maxres=50000,ibin=20)
       integer idel(maxa),resnum(maxa),restyp(maxa),pol(20),
      &        ihflg(maxa),rnum,ncel,iused(ntyp),imut(maxres),
      &        itgt(maxres),iatyp(maxa),iu(natyp,natyp),
@@ -80,7 +80,7 @@ CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 
       character*80 whole, filename*100,whole1(maxa),fil1*40,fil2*40,
-     &              afil(60000)*80,recordwang(maxa),temppath
+     &              afil(200000)*80,recordwang(maxa),temppath
 
           read(*,'(a500)') base
 
@@ -106,6 +106,7 @@ c         base='/home/hzhou2/fold/dplanedfire '
 c         base='/gpfs1/active/hzhou2/fold/dplanedfire '
         ips=index(base,' ')-1
 c        open(unit=20,file=base(1:ips)//'/fort.21_1.61_10',
+c        print *,base
         open(unit=20,file=base(1:ips)//'/fort.21_1.61_2',
      &               status='old')
          read(20,*)
@@ -231,7 +232,7 @@ c            filename='/home/hzhou2/sparks/1010db/'//afil(ii)
         rnum=0
         resnum(1)=0
  15    line = line + 1
-      
+c      print *,'reading finished for  line :',line
       read(11,'(a80)',err=10,end=10) whole1(id) 
 c here load all data finish and then goto 10,notice here i should put all the data in recordwang, but i will modify some to install the some atoms' energy to it.
 c      if(whole1(id)(22:22).ne.chain.and.ime.eq.1) goto 10 
@@ -273,7 +274,8 @@ c     &                     goto 15
         resnum(rnum+1)=id           
 c here resnum denotes the id, specially correspond to atom, so that we can use this to denote our every atom's energy       
 c           write(*,'(a80)') whole1(id)
-
+c      print "(i10)",id
+c      print *,whole1(id)
       READ (whole1(id)(31:54),'(3F8.3)') Xp(id),Yp(id),Zp(id)
        cx=cx+xp(id)
        cy=cy+yp(id)
@@ -329,15 +331,16 @@ c         stop
       natom=id
 	  recordwang(id)=whole1(id)
       id=id+1
+c      print *,'record wang info',recordwang(id)
       goto 15
 
-
+c      print *,'reading file finished with residue',rnum
 
  10   continue
-
+c      print *,'reading file finished with residue',rnum
            close(11)
 
-
+c setting xn,xd
           do k1=2,rnum
          if((resnum(k1+1)-resnum(k1)).lt.ianum(restyp(k1))) goto 404
            do k=resnum(k1)+1,resnum(k1+1)   
@@ -350,10 +353,11 @@ c         stop
            enddo 
            endif
            enddo
+      
 404	continue
           enddo
 		 
-
+c         print *,xn
          do k1=2,rnum-1
          if((resnum(k1+1)-resnum(k1)).lt.ianum(restyp(k1))) goto 405
            do k=resnum(k1)+1,resnum(k1+1)   
@@ -390,7 +394,8 @@ c             if(jj.gt.ibin) jj=ibin
              ect=ect+ee
 			 etcrecord(k,1)=etcrecord(k,1)+ee
 			 etcrecord(j,1)=etcrecord(j,1)+ee
-             if((j1-k1).ge.ig) then
+c      print *,'starting the final calculation',k1,j1       
+      if((j1-k1).ge.ig) then
              xdd=1./rd
              vt(1)=(xp(j)-xp(k))*xdd   ! 1->2
              vt(2)=(yp(j)-yp(k))*xdd   ! 1->2
@@ -399,17 +404,21 @@ c             if(jj.gt.ibin) jj=ibin
              vt2(1)=-vt(1)
              vt2(2)=-vt(2)
              vt2(3)=-vt(3)
-
+c            print *,xn1,xn2 
+c           print *,'call calang2' 
              call calang2(xn1,vt,ang1,cs1)
              mm1=int((cs1+1.001)*6.0)+1
              if(mm1.gt.12) mm1=12
+c            print *,'call calphi'
              call calphi(xn1,xd1,vt,phi1)
              mm2=int((phi1+180.001)/30.0)+1
              if(mm2.gt.12) mm2=12
-
+c            print *,'call calang2 again'
              call calang2(xn2,vt2,ang2,cs2)
              mm3=int((cs2+1.001)*6.0)+1
              if(mm3.gt.12) mm3=12
+c             print *,'cs2',cs2
+c           print *,'call calphi again'
              call calphi(xn2,xd2,vt2,phi2)
              mm4=int((phi2+180.001)/30.0)+1
              if(mm4.gt.12) mm4=12
@@ -426,27 +435,40 @@ c             if(jj.gt.ibin) jj=ibin
              xxh(4)=xp(k)+xn1(1)
              yyh(4)=yp(k)+xn1(2)
              zzh(4)=zp(k)+xn1(3)
-
+c            print *,'call dihedral'
             call dihedral(xxh,yyh,zzh,dih)
 
              mm5=min(int((dih+180.001)/30.0)+1,12)
 
 
-
-	      temp0=0.0
+c            print *,'fill all the records data',k,j
+c            print *,ind1(k),ind2(k),ind1(j),ind2(j),jj,mm1
+c	      print *,cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm1,1)
+          temp0=0.0
+          
           temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm1,1)
+c          print *,'temp0 calculate finished1',temp0
           temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm2,2)
+c          print *,'temp0 calculate finished2',temp0
+c           print *,mm3
           temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm3,3)
+c          print *,'temp0 calculate finished3',temp0
           temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm4,4)
-		  temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm5,5)
-		  etcrecord(k,2)=temp0+etcrecord(k,2)
+c		  print *,'temp0 calculate finished4',temp0
+          temp0=temp0+cnttheta(ind1(k),ind2(k),ind1(j),ind2(j),jj,mm5,5)
+c  		  print *,'temp0 calculate finished',temp0
+          flush(6)
+          etcrecord(k,2)=temp0+etcrecord(k,2)
 		  ect2=ect2+temp0
 		  etcrecord(j,2)=temp0+etcrecord(j,2)
+c          print *,'etcrecord finished calculation'
+           flush(6)
              endif ! .ge.ig
 
              endif
 
             endif
+c          print *,'calculation call finished',k1,j1
 1234              continue
             enddo
 406	continue
@@ -591,7 +613,7 @@ C      SAVE /RASET1/,/RASET2/
 c       ###################
       subroutine calexp(natom1,rg,map)
       implicit real*8 (a-h,o-z)
-      parameter(maxa=20000,coe=1.17)
+      parameter(maxa=200000,coe=1.17)
       real*8 x(maxa),y(maxa),z(maxa),icnt(50)      
       integer map(*) 
       common /ddd/icnt
@@ -686,8 +708,8 @@ c	##########################
         subroutine caldplane(xp,yp,zp,k1,k,id1,id2,ibk,xn,xd,ibb)
         real*8 xp(*),yp(*),zp(*),xn(*),xd(*),xn1(3),xd1(3)
         real*8 v1(3),v2(3),v3(3),sidegeo(20,4,15)
-         character ctmp*3,base*500
-        parameter(maxres=1000)
+         character ctmp*3,base*70
+        parameter(maxres=50000)
         integer ibk(maxres,15),sidelb(20,3,15)
          data init/0/,sidelb/900*0/
        common /fff/ips,base
@@ -832,6 +854,7 @@ c     #######################################
          cs=0.0
          r1=0.0
          r2=0.0
+c       print *,xn,xh1
        do i=1,3
           xt1=xn(i)
           xt2=xh1(i)
@@ -839,7 +862,7 @@ c     #######################################
           r1=r1+xt1**2
           r2=r2+xt2**2
        enddo
-
+c       print *,'r1*r2 result',sqrt(r1*r2)
        cs=cs/sqrt(r1*r2)
 
        ang=acos(cs)*co
