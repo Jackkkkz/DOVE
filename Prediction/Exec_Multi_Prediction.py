@@ -17,17 +17,10 @@ def Exec_Multi_Prediction(indicate,input_path):
         print('No the evaluation input data or complex id info %s' % input_path)
         return None
     input_data = np.load(inputdata_path)
-    # can't use anything related to ITSCore for license issue, please email to me for details:wang3702@purdue.edu
-    if indicate=='itscore' or indicate=='atomitscore' or indicate=='goapitscore' or indicate=='atomgoapitscore':
-        print('Because of ITScore license issue, we can not work on anything related to ITScore')
-        print('*'*5+'Please contact me for details: wang3702@purdue.edu'+'*'*5)
-        return [-1]*len(input_data)
-
     # First reload the model
     channel = Indicate_to_channel(indicate)
     model = makecnn(0, 0, 0, channel)
     model.load_weights(model_path)
-    #Predict
 
     # Then applying the input to predict
 
